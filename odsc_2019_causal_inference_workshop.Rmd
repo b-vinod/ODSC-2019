@@ -1,12 +1,7 @@
 ---
 title: "ODSC 2019 Causal Inference Workshop"
 output:
-  html_document:
-    code_folding: hide
-    number_sections: no
-    theme: flatly
-    toc: yes
-    toc_float: yes
+  tufte::tufte_handout: default
 editor_options: 
   chunk_output_type: console
 ---
@@ -24,12 +19,12 @@ library(MASS)
 library(glmnet)
 library(simstudy)
 library(randomForest)
-library("grf")
+library(grf)
 ```
 
-## Controlled / Fixed Effects Regression
+# Controlled / Fixed Effects Regression
 
-```{r}
+```{r warning=F}
 #set constants
 n<-10^4
 n.time.periods<-10
@@ -51,20 +46,21 @@ dat<-data.frame(Y,X,C,P.FE,T.FE)
 head(dat);tail(dat)
 ```
 
-```{r}
+```{r warning=F}
 #controlled reg/fixed effect models
 model1<-lm(Y~X,data=dat)
 model2<-lm(Y~X+C,data=dat)
 model3<-lm(Y~X+factor(P.FE)+factor(T.FE),data=dat)
 model4<-lm(Y~X+C+factor(P.FE)+factor(T.FE),data=dat)
 stargazer(model1,model2,model3,model4,type="text",style="aer",omit=c("C","factor"),column.labels=c("Y~X","Y~X+C","Y~X+FE","Y~X+C+FE"),
-          dep.var.labels="Controlled / Fixed Effects Regression",omit.stat=c("f","ser","rsq","n"),notes=c("True Coef on X = 2"),notes.append=FALSE,
-          add.lines=list(c("Add. Controls","No","Yes","No","Yes"),c("Fixed effects","No","No","Yes","Yes")))
+          dep.var.labels="Controlled / Fixed Effects Regression",omit.stat=c("f","ser","rsq","n"),
+          notes=c("True Coef on X = 2"),notes.append=FALSE,add.lines=list(c("Add. Controls","No","Yes","No","Yes"),
+                                                                          c("Fixed effects","No","No","Yes","Yes")))
 ```
 
-## Regression Discontinuity
+# Regression Discontinuity
 
-```{r}
+```{r warning=F}
 #set constants
 n<-100
 mu1<-0.02
@@ -85,7 +81,7 @@ X %>%
   ggplot(aes(X,Y,color=cutoff)) +
   geom_line(lwd=2) +
   geom_line(aes(X,counterfactual),lty=2,lwd=2) +
-  geom_vline(xintercept=50,lty=2) +
+  geom_vline(xintercept=n/2,lty=2) +
   xlab("X") +
   ylab("Y") +
   theme_economist() +
@@ -93,17 +89,17 @@ X %>%
   theme(legend.position="none")
 ```
 
-```{r}
+```{r warning=F}
 #regression discontinuity model
 model1<-lm(Y~X+I(X>50)+X*I(X>50),data=X)
 stargazer(model1,type="text",style="aer",column.labels=c("Y~X+I(X>Cutoff)+X*I(X>Cutoff)"),dep.var.labels="Regression Discontinuity",
           omit.stat=c("f","ser","rsq","n","adj.rsq"),notes=c("Causal Impact = 1.5"),notes.append=FALSE,intercept.bottom=F)
-
+print(paste("Causal Impact ~ -0.049+50*0.031 =",round(coef(model1)["I(X > 50)TRUE"]+coef(model1)["X:I(X > 50)TRUE"]*50,2)))
 ```
 
-## Difference in Difference
+# Difference in Difference
 
-```{r}
+```{r warning=F}
 #set constants
 n.per.group<-500
 time.periods<-1000
@@ -140,16 +136,16 @@ X %>%
   theme(legend.position="none")
 ```
 
-```{r}
+```{r warning=F}
 #difference in difference model
 model1<-lm(Y~Post+G+Post*G,data=X)
 stargazer(model1,type="text",style="aer",column.labels=c("Y~Post+G+Post*G"),dep.var.labels="Difference in Difference",
           omit.stat=c("f","ser","rsq","n","adj.rsq"),notes=c("Causal Impact = 5"),notes.append=FALSE,intercept.bottom=F)
 ```
 
-## Instrumental Variable
+# Instrumental Variable
 
-```{r}
+```{r warning=F}
 #set constants
 n<-1000
 mu<-0
@@ -169,10 +165,10 @@ X$Y<-beta*X$X-bias*X$e1+X$e2
 X<-data.frame(X)
 
 #explore data
-head(X);cor(X$X,X$Z)
+head(X)
 ```
 
-```{r}
+```{r warning=F}
 #IV model
 model1<-lm(Y~X,data=X)
 model2<-lm(X~Z,data=X)
@@ -181,24 +177,23 @@ model4<-ivreg(Y~X|Z,data=X)
 stargazer(model1,model2,model3,model4,type="text",style="aer",column.labels=c("Y~X","Stage 1: X~Z","Stage 2: Y~Xh","IV"),
           dep.var.labels=c("","",""),covariate.labels=c("Constant","X","Z","Xhat"),
           model.names=F,omit.stat=c("ser","rsq","n","adj.rsq"),notes=c("Causal Impact = 1"),notes.append=FALSE,intercept.bottom=F)
-summary(model3,vcov=sandwich,df=Inf,diagnostics=T)
 ```
 
-## Double Selection
+# Double Selection
 
-```{r}
+```{r warning=F}
 #set constants
 N<-10^3
 N.Coeff<-5*10^2
 beta<-2
 C.mu<-rep(0,N.Coeff)
 C.rho<-0.5
-C.var<-rnorm(N.Coeff,mean=1,sd=1)^2
-beta.C.mu.sigma<-5
-beta.C.n.zero<-30
+beta.C.mu.sigma<-10
+beta.C.n.zero<-25
 
 #set variables
 set.seed(19)
+C.var<-rnorm(N.Coeff,mean=1,sd=1)^2
 C<-as.data.frame.matrix(genCorGen(n=N,nvars=N.Coeff,params1=C.mu,params2=C.var,dist='normal',rho=C.rho,corstr='ar1',wide='True'))[,-1]
 betaC<-rnorm(N.Coeff,mean=beta.C.mu.sigma,sd=beta.C.mu.sigma)
 betaC[beta.C.n.zero:N.Coeff]<-0
@@ -213,8 +208,8 @@ X<-data.frame(Y,Treatment,C)
 head(X[,1:5])
 ```
 
-```{r}
-## double selection
+```{r warning=F}
+# double selection
 C<-data.matrix(X[,-which(colnames(X)%in%c("Y","Treatment"))])
 glmnet.model1<-cv.glmnet(C,X$Y,alpha=1)
 Y.on.X<-colnames(C)[unlist(predict.cv.glmnet(glmnet.model1,s="lambda.1se",type="nonzero"))]
@@ -231,9 +226,9 @@ stargazer(model1,model2,model3,type="text",style="aer",column.labels=c("No Contr
           model.names=F,omit.stat=c("ser","rsq","n","adj.rsq"),notes=c("Causal Impact = 2"),notes.append=FALSE)
 ```
 
-## Causal Forests
+# Causal Forests
 
-```{r}
+```{r warning=F}
 #set constants
 N<-5*10^3
 N.Coeff<-5
@@ -260,8 +255,8 @@ X<-data.frame(Y,Treatment,C,"Group"=as.character(var.group))
 head(X[,c(1:5,ncol(X))])
 ```
 
-```{r}
-## regular OLS
+```{r warning=F}
+# regular OLS
 C<-data.matrix(X[,-which(colnames(X)%in%c("Y","Treatment"))])
 model1<-lm(Y~.,data=X[,-which(colnames(X)=="Group")])
 model2<-lm(Y~.+Treatment*Group,data=X)
@@ -270,15 +265,17 @@ stargazer(model1,model2,type="text",style="aer",column.labels=c("All Controls","
           model.names=F,omit.stat=c("ser","rsq","n","adj.rsq"),notes=c("Average Treatment Effect = 2.5"),notes.append=FALSE)
 ```
 
-```{r}
-## causal forest
-cf<-causal_forest(X=model.matrix(~.,data=X[,-which(colnames(X)%in%c("Y","Treatment"))]),Y=X$Y,W=X$Treatment,honesty=T,honesty.fraction=0.5)
+```{r warning=F}
+# causal forest
+cf<-causal_forest(X=model.matrix(~.,data=X[,-which(colnames(X)%in%c("Y","Treatment"))]),Y=X$Y,W=X$Treatment,
+                  honesty=T,honesty.fraction=0.5)
 pred<-predict(cf)$predictions
 cf %>% 
   variable_importance() %>% 
   as.data.frame() %>% 
   mutate(variable=colnames(model.matrix(~.,data=X[,-which(colnames(X)%in%c("Y","Treatment"))]))) %>% 
   arrange(desc(V1))
+tapply(pred,X$Group,mean)
 data.frame("true"=beta,"est"=pred,"Group"=X$Group) %>%
   ggplot(aes(true,est,color=Group)) +
   geom_point() +
@@ -287,6 +284,4 @@ data.frame("true"=beta,"est"=pred,"Group"=X$Group) %>%
   theme_economist() +
   scale_color_economist() +
   theme(legend.position="none")
-tapply(pred,X$Group,mean)
 ```
-
