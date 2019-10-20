@@ -1,10 +1,6 @@
 ---
 title: "ODSC 2019 Causal Inference Workshop"
 output:
-  word_document:
-    toc: yes
-  pdf_document:
-    toc: yes
   html_document:
     code_folding: hide
     number_sections: no
@@ -55,13 +51,13 @@ dat<-data.frame(Y,X,C,P.FE,T.FE)
 head(dat);tail(dat)
 ```
 
-```{r,results="asis"}
+```{r}
 #controlled reg/fixed effect models
 model1<-lm(Y~X,data=dat)
 model2<-lm(Y~X+C,data=dat)
 model3<-lm(Y~X+factor(P.FE)+factor(T.FE),data=dat)
 model4<-lm(Y~X+C+factor(P.FE)+factor(T.FE),data=dat)
-stargazer(model1,model2,model3,model4,type="html",style="aer",omit=c("C","factor"),column.labels=c("Y~X","Y~X+C","Y~X+FE","Y~X+C+FE"),
+stargazer(model1,model2,model3,model4,type="text",style="aer",omit=c("C","factor"),column.labels=c("Y~X","Y~X+C","Y~X+FE","Y~X+C+FE"),
           dep.var.labels="Controlled / Fixed Effects Regression",omit.stat=c("f","ser","rsq","n"),notes=c("True Coef on X = 2"),notes.append=FALSE,
           add.lines=list(c("Add. Controls","No","Yes","No","Yes"),c("Fixed effects","No","No","Yes","Yes")))
 ```
@@ -97,7 +93,7 @@ X %>%
   theme(legend.position="none")
 ```
 
-```{r,results="asis"}
+```{r}
 #regression discontinuity model
 model1<-lm(Y~X+I(X>50)+X*I(X>50),data=X)
 stargazer(model1,type="text",style="aer",column.labels=c("Y~X+I(X>Cutoff)+X*I(X>Cutoff)"),dep.var.labels="Regression Discontinuity",
@@ -293,3 +289,4 @@ data.frame("true"=beta,"est"=pred,"Group"=X$Group) %>%
   theme(legend.position="none")
 tapply(pred,X$Group,mean)
 ```
+
