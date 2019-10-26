@@ -7,7 +7,20 @@ editor_options:
 ---
 
 ```{r setup, include=FALSE}
-#load required packages; if missing use install.packages("package name"), then load with library
+ #install required packages
+install.packages("stargazer")
+install.packages("plyr")
+install.packages("dplyr")
+install.packages("magrittr")
+install.packages("ggplot2")
+install.packages("ggthemes")
+install.packages("AER")
+install.packages("MASS")
+install.packages("glmnet")
+install.packages("simstudy")
+install.packages("randomForest")
+install.packages("grf")
+#load required packages
 library(stargazer)
 library(plyr)
 library(dplyr)
@@ -94,7 +107,8 @@ X %>%
 model1<-lm(Y~X+I(X>50)+X*I(X>50),data=X)
 stargazer(model1,type="text",style="aer",column.labels=c("Y~X+I(X>Cutoff)+X*I(X>Cutoff)"),dep.var.labels="Regression Discontinuity",
           omit.stat=c("f","ser","rsq","n","adj.rsq"),notes=c("Causal Impact = 1.5"),notes.append=FALSE,intercept.bottom=F)
-print(paste("Causal Impact ~ -0.049+50*0.031 =",round(coef(model1)["I(X > 50)TRUE"]+coef(model1)["X:I(X > 50)TRUE"]*50,2)))
+print(paste("Causal Impact ~ ",round(coef(model1)["I(X > 50)TRUE"],3)," + 50 * ",round(coef(model1)["X:I(X > 50)TRUE"],3)," = ",
+            round(coef(model1)["I(X > 50)TRUE"]+coef(model1)["X:I(X > 50)TRUE"]*50,1),sep=""))
 ```
 
 # Difference in Difference
